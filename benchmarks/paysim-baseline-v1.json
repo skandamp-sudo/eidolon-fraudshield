@@ -6,7 +6,8 @@
     "dataset_sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
     "dataset_rows": 6362620,
     "execution_environment": "user-reported local MacBook; not LinuxONE",
-    "source_commit": "ba953477586d7a08198643bdf277eb6acd1ee8e4",
+    "audited_source_commit": "ba953477586d7a08198643bdf277eb6acd1ee8e4",
+    "original_training_commit_verified": false,
     "observed_on": "2026-10-15"
   },
   "model": {
@@ -70,7 +71,7 @@
     "binned_average_precision": 0.097924
   },
   "limitations": [
-    "Test window is previously observed and excluded from Phase 2 tuning and reporting.",
+    "Test window is previously observed and excluded from Phase 2 candidate tuning and evaluation.",
     "Average precision is a 10001-bin approximation, not exact AP.",
     "Dataset is simulated; these results do not establish bank performance.",
     "Original model artifacts are preserved outside Git."

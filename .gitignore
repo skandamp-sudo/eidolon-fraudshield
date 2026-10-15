@@ -8,3 +8,4 @@ data/*.sqlite3*
 data/*.csv
 models/*.local.json
 .experiments/
+.venv-training/

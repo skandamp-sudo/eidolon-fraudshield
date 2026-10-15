@@ -14,7 +14,9 @@ The included model is a **functional dependency-free starter baseline**, not a v
 
 ## Separate PaySim temporal pipeline
 
-`python3 scripts/train_paysim.py /path/to/paysim.csv` requires a user-supplied canonical CSV ordered by nondecreasing `step`. It makes one metadata pass, one training pass, one validation pass and one future-test pass. All rows in a step stay in one partition. Threshold selection uses validation F1 only. Features are fixed to `step`, `type` and `amount`; label, flag, balances and account IDs are excluded. The CSV SHA-256 and split/count metadata are recorded with the local artifact. Average precision is approximated with 10,001 score bins; confusion counts and alert volume use the same persisted, rounded model parameters. This pipeline has only been exercised on small synthetic test fixtures in this checkout. **No full PaySim dataset or LinuxONE result is available here.**
+The original `scripts/train_paysim.py` pipeline uses whole-step chronological partitions, validation-only threshold selection and a 10,001-bin approximation for average precision. It has now completed locally on the canonical 6,362,620-row CSV; [the versioned aggregate report](../benchmarks/paysim-baseline-v1.json) preserves its metrics and provenance. The original artifact remains outside Git. Do not overwrite it by rerunning the original CLI.
+
+The future test is now **previously observed**. Phase 2 uses only original training/validation steps and a protocol frozen before measuring candidate results. Read [the audit](PHASE2_SCIENTIFIC_AUDIT.md) and [reproduction instructions](PHASE2_REPRODUCIBILITY.md). Exact AP on new development windows must not be compared directly with approximate AP from the historical future test. No LinuxONE run or independent real-bank validation has occurred.
 
 ## Further scientific work
 

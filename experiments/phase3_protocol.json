@@ -1,0 +1,28 @@
+{
+  "version": "paysim-portable-phase3-v1",
+  "phase2_commit": "d4fb349ab394b033b0298c23f7334e1ccadf1538",
+  "phase2_protocol_sha256": "96eac5e83b13d35d1a22dfd7218df96662d01277276d1533798dcc3eedef760c",
+  "phase2_report_sha256": "462d3048c4b0c24c1c8969ac087e18d1edc67413cb0a67c18f5e67e38396e7e9",
+  "phase2_runner_sha256": "f7b1d335c99158dda0abc606e08863a9eb333ac414b4c2e416fa4d13236e5db6",
+  "selected_candidate": "hist_tree_leaf7_balanced",
+  "dataset_sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
+  "baseline_artifact_sha256": "2017a5382d3795724023b1f137ecbf96cd8b60311c30e0d64af2cf85318402dd",
+  "training_step_lte": 323,
+  "training_rows": 4463587,
+  "training_positives": 3643,
+  "seed": 74,
+  "threads": 2,
+  "locked_thresholds": {
+    "max_f1": 0.9833296104213592,
+    "capacity_1_per_10000": 0.9920375045545163,
+    "capacity_5_per_10000": 0.9688171814001637,
+    "capacity_10_per_10000": 0.9642966278892878,
+    "capacity_25_per_10000": 0.9416149137015878,
+    "capacity_50_per_10000": 0.9296536824117786
+  },
+  "parity_absolute_tolerance": 1e-12,
+  "parity_random_seed": 20261015,
+  "parity_random_events": 2000,
+  "parity_training_vectors": 4096,
+  "evaluation_policy": "No model or threshold selection. No confirmation or previously exposed future holdout evaluation in this phase. New-source execution awaits provenance and source fingerprint."
+}

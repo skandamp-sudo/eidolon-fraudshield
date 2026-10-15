@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10161f">
+  <title>EIDOLON FRAUDSHIELD — Fraud Intelligence Console</title>
+  <meta name="description" content="EIDOLON FRAUDSHIELD — Explainable fraud analytics demo, synthetic transaction replay, and analyst investigation.">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" aria-label="Primary navigation">
+    <div class="brand"><div class="brand-icon" aria-hidden="true"><span></span><span></span></div><div><strong>EIDOLON</strong><small>FRAUDSHIELD / LABS</small></div></div>
+    <div class="environment"><span class="pulse"></span> SYSTEM ONLINE <span class="environment-right">DEMO</span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav class="nav">
+      <a class="nav-link active" href="#overview"><span>◫</span> Overview <span class="arrow">↗</span></a>
+      <a class="nav-link" href="#transactions"><span>≡</span> Transaction stream</a>
+      <a class="nav-link" href="#investigations"><span>◇</span> Investigations</a>
+      <a class="nav-link" href="#intelligence"><span>⌘</span> Model intelligence</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-callout"><div class="callout-icon">✳</div><strong>Built for responsible decisions.</strong><p>Signals inform analysts. They do not authorize real transactions.</p></div>
+      <div class="sidebar-footer"><span class="avatar">FS</span><div><strong>FRAUDSHIELD</strong><small>IBM Z DATATHON 2026</small></div><span class="side-more">•••</span></div>
+    </div>
+  </aside>
+  <main id="overview" class="main">
+    <header class="topbar"><div class="breadcrumbs">EIDOLON <span>/</span> FRAUD INTELLIGENCE <span>/</span> <b>OVERVIEW</b></div><div class="topbar-right"><span class="system-dot"></span><span>All services operational</span><span class="top-separator"></span><span id="clock">--:--:--</span></div></header>
+    <div class="content">
+      <div class="page-title-row"><div><div class="eyebrow">OPERATIONS CENTER <span class="tiny-line"></span> BUILD 001</div><h1>Fraud Intelligence <em>Console<span>.</span></em></h1><p class="subtitle">Observe transactions. Understand risk. Make informed decisions.</p></div><div class="title-actions"><button id="manual-btn" class="btn btn-secondary">＋ &nbsp; Score transaction</button><button id="replay-btn" class="btn btn-primary"><span>▶</span> Start live replay</button></div></div>
+      <section class="hero" aria-label="Live activity summary"><div class="hero-content"><div class="hero-live"><span class="pulse"></span> LIVE INTELLIGENCE <span class="hero-divider">/</span> SYNTHETIC ENVIRONMENT</div><div class="hero-title">Every transaction<br><span>tells a story.</span></div><p>Analyze event streams and surface high-risk financial activity as it happens. Designed for explainability, built for human oversight.</p><div class="hero-metadata"><span><b id="hero-processed">0</b> EVENTS ANALYZED</span><span class="hero-sep"></span><span>MODEL <b>FS-01</b></span><span class="hero-sep"></span><span>STATUS <b>ACTIVE</b></span></div></div><div class="hero-orb" aria-hidden="true"><div class="orb outer"></div><div class="orb middle"></div><div class="orb inner"></div><div class="orb-dot d1"></div><div class="orb-dot d2"></div><div class="orb-dot d3"></div><span class="orb-center">E</span></div></section>
+      <div class="section-header"><div><h2>System at a glance</h2><p>Real-time operational signals from the transaction stream.</p></div><span id="refresh-time" class="subdued">Awaiting data</span></div>
+      <section class="metrics" aria-label="Key metrics">
+        <article class="metric"><div class="metric-top">TOTAL TRANSACTIONS <span>↗</span></div><div id="metric-total" class="metric-value">0</div><div class="metric-foot"><span class="chip chip-neutral">ALL EVENTS</span> Processed since reset</div></article>
+        <article class="metric"><div class="metric-top">HIGH RISK ALERTS <span class="danger">◎</span></div><div id="metric-high" class="metric-value">0</div><div class="metric-foot"><span class="chip chip-red">ESCALATE</span> Requires attention</div></article>
+        <article class="metric"><div class="metric-top">PENDING REVIEW <span class="warning">◌</span></div><div id="metric-medium" class="metric-value">0</div><div class="metric-foot"><span class="chip chip-amber">REVIEW</span> Medium-risk signals</div></article>
+        <article class="metric"><div class="metric-top">TRANSACTION VOLUME <span>↗</span></div><div id="metric-volume" class="metric-value">SU 0</div><div class="metric-foot"><span class="chip chip-green">SIMULATED</span> Not real currency flow</div></article>
+      </section>
+      <div class="analytics-layout"><section class="panel graph-panel"><div class="panel-heading"><div><div class="panel-eyebrow">STREAM ANALYTICS</div><h3>Transaction risk activity</h3><p>Scores of the most recent 65 analyzed events</p></div><div class="legend"><span class="legend-dot"></span> Fraud risk score</div></div><div class="plot-wrap"><div class="plot-y"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div><svg id="risk-plot" viewBox="0 0 620 200" preserveAspectRatio="none" role="img" aria-label="Chart of recent risk scores"><g class="grid-lines"><line x1="0" y1="0" x2="620" y2="0"/><line x1="0" y1="50" x2="620" y2="50"/><line x1="0" y1="100" x2="620" y2="100"/><line x1="0" y1="150" x2="620" y2="150"/><line x1="0" y1="199" x2="620" y2="199"/></g><path id="plot-fill" d="" fill="url(#areaFade)"/><path id="plot-line" d="" fill="none" stroke="#39c6a5" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/><defs><linearGradient id="areaFade" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#39c6a5" stop-opacity=".23"/><stop offset="100%" stop-color="#39c6a5" stop-opacity="0"/></linearGradient></defs></svg></div><div class="plot-bottom"><span>OLDEST</span><span>LIVE EVENT STREAM →</span><span>NEWEST</span></div><div class="chart-notice"><span class="pulse"></span><span id="replay-status">Stream idle. Start a replay to simulate incoming transactions.</span><span id="replay-progress">0 / 0</span></div></section>
+      <section id="intelligence" class="panel intelligence-panel"><div class="panel-heading"><div><div class="panel-eyebrow">DECISION DISTRIBUTION</div><h3>Risk classification</h3><p>Analyzed transactions by tier</p></div><span class="intelligence-mark">◉</span></div><div class="donut-wrap"><div id="donut" class="donut"><div class="donut-hole"><strong id="donut-total">0</strong><span>EVENTS</span></div></div></div><div class="risk-legend"><div><span class="risk-label"><span class="bullet green"></span> Low risk</span><strong id="risk-low">0</strong></div><div><span class="risk-label"><span class="bullet amber"></span> Medium risk</span><strong id="risk-medium">0</strong></div><div><span class="risk-label"><span class="bullet red"></span> High risk</span><strong id="risk-high">0</strong></div></div></section></div>
+      <section id="transactions" class="panel transaction-panel"><div class="table-top"><div><div class="panel-eyebrow">ACTIVITY LOG</div><h3>Recent transactions <span id="table-count" class="count-pill">0</span></h3><p>Explainable scoring decisions from the live stream</p></div><div class="table-actions"><button id="reset-btn" class="btn btn-ghost">↺ Reset demo</button><span class="table-live"><span class="pulse"></span> LIVE</span></div></div><div class="table-scroll"><table><thead><tr><th>TRANSACTION ID</th><th>TYPE</th><th>AMOUNT</th><th>RISK SCORE</th><th>DECISION</th><th>REVIEW</th><th></th></tr></thead><tbody id="event-rows"><tr><td colspan="7" class="empty">No transactions yet. Start the live replay to populate the system.</td></tr></tbody></table></div><div class="table-bottom">Most recent 65 events <span>Click any row to investigate →</span></div></section>
+      <div class="lower-layout"><section id="investigations" class="panel alerts-panel"><div class="panel-heading"><div><div class="panel-eyebrow">ANALYST WORKSPACE</div><h3>Priority investigations</h3><p>High-risk transactions awaiting review</p></div><span class="panel-icon danger">◇</span></div><div id="alerts" class="alerts-list"><div class="empty-alert">High-risk signals will appear here once events are scored.</div></div></section><section class="panel model-panel"><div class="panel-heading"><div><div class="panel-eyebrow">MODEL TRANSPARENCY</div><h3>Intelligence profile</h3><p>Model context and measured limitations</p></div><span class="panel-icon">✳</span></div><div class="model-profile"><div class="model-top"><span class="model-symbol">FS</span><div><strong>FS-01 BASELINE</strong><small>Logistic regression · Portable Python</small></div><span class="model-ready"><span class="pulse"></span> LOADED</span></div><div class="model-data"><div><span>TRAINING SOURCE</span><strong>Simulated PaySim-style data</strong></div><div><span>TEST SET F1</span><strong id="test-f1">—</strong></div><div><span>TEST SET RECALL</span><strong id="test-recall">—</strong></div><div><span>TEST SET PRECISION</span><strong id="test-precision">—</strong></div></div><p class="model-caveat">These are synthetic holdout metrics, not real-world accuracy. Scores are uncalibrated; no financial action is executed.</p></div></section></div>
+      <footer class="footer"><div>EIDOLON <span>/</span> FRAUDSHIELD &nbsp;•&nbsp; IBM Z DATATHON 2026</div><div>TRANSPARENCY BY DESIGN <span>✳</span> HUMAN DECISIONS FIRST</div></footer>
+    </div>
+  </main>
+</div>
+<div id="overlay" class="overlay" aria-hidden="true"><div class="backdrop" data-close="1"></div><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title"><div class="drawer-head"><div><div class="panel-eyebrow">TRANSACTION DETAIL</div><h2 id="drawer-title">Investigation</h2></div><button id="drawer-close" class="close-btn" aria-label="Close dialog">×</button></div><div id="drawer-body"></div></section></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "version": "synthetic-baseline-1",
+  "trained_at": "2026-10-15T16:39:52.226925+00:00",
+  "kind": "logistic regression (standard library SGD)",
+  "data_origin": "synthetic PaySim-like events ONLY",
+  "features": [
+    "log_amount",
+    "high_value_5k",
+    "high_value_20k",
+    "high_value_100k",
+    "is_transfer",
+    "is_cash_out",
+    "is_cash_in",
+    "is_payment",
+    "is_debit",
+    "overnight_simulated_hour"
+  ],
+  "weights": [
+    4.49304799,
+    1.71025936,
+    0.29439706,
+    -1.20197194,
+    2.23935516,
+    1.61856736,
+    -2.6735116,
+    -4.10597615,
+    -1.92815138,
+    0.01496326
+  ],
+  "bias": -7.55686559,
+  "threshold": 0.25,
+  "sample_counts": {
+    "train": 8400,
+    "validation": 1800,
+    "test": 1800
+  },
+  "validation": {
+    "precision": 0.3767,
+    "recall": 0.7304,
+    "f1": 0.497,
+    "false_positive_rate": 0.0825,
+    "tp": 84,
+    "fp": 139,
+    "fn": 31,
+    "tn": 1546,
+    "positives": 115,
+    "total": 1800
+  },
+  "test": {
+    "precision": 0.4053,
+    "recall": 0.7333,
+    "f1": 0.522,
+    "false_positive_rate": 0.0667,
+    "tp": 77,
+    "fp": 113,
+    "fn": 28,
+    "tn": 1582,
+    "positives": 105,
+    "total": 1800,
+    "average_precision": 0.5013
+  }
+}

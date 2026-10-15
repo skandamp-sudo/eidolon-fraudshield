@@ -20,8 +20,16 @@ def clean_event(payload: dict) -> dict:
     if not isinstance(payload, dict):
         raise ValueError('Transaction must be a JSON object')
     try:
-        step = int(payload.get('step', 1))
+        raw_step = payload.get('step', 1)
+        if isinstance(raw_step, bool) or not (
+            isinstance(raw_step, int) or
+            isinstance(raw_step, str) and raw_step.isascii() and raw_step.isdecimal()
+        ):
+            raise ValueError('Invalid step')
+        step = int(raw_step)
         tx_type = str(payload['type']).upper().strip()
+        if isinstance(payload['amount'], bool):
+            raise ValueError('Invalid amount')
         amount = float(payload['amount'])
         origin = float(payload.get('oldbalanceOrg', 0))
         dest = float(payload.get('oldbalanceDest', 0))

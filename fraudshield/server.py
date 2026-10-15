@@ -11,6 +11,9 @@ from .synthetic import generate
 
 ROOT=Path(__file__).resolve().parents[1]
 
+def reject_json_constant(value):
+    raise ValueError(f'Invalid JSON constant: {value}')
+
 class App:
     def __init__(self,root=ROOT,database=None):
         self.root=Path(root)
@@ -27,7 +30,7 @@ class App:
         return result
 
     def begin_replay(self,count=85,speed=.16):
-        if not isinstance(count,int) or count<1 or count>300:
+        if isinstance(count,bool) or not isinstance(count,int) or count<1 or count>300:
             raise ValueError('count must be 1..300')
         with self.worker_lock:
             if self.replay['running']:
@@ -59,6 +62,9 @@ class App:
         app=self
         class Handler(BaseHTTPRequestHandler):
             server_version='FraudShield/0.1'
+            def setup(self):
+                super().setup()
+                self.connection.settimeout(10)
             def log_message(self,format,*args):
                 print(f'[{self.log_date_time_string()}] {format%args}')
             def send_bytes(self,body,status=200,ctype='application/json; charset=utf-8'):
@@ -83,8 +89,9 @@ class App:
                 try: size=int(self.headers.get('Content-Length','0'))
                 except ValueError: raise ValueError('Invalid Content-Length')
                 if size<=0 or size>65_536: raise ValueError('JSON payload must be 1 to 65536 bytes')
-                try: result=json.loads(self.rfile.read(size))
-                except (ValueError,UnicodeDecodeError) as e: raise ValueError('Invalid JSON body') from e
+                try:
+                    result=json.loads(self.rfile.read(size), parse_constant=reject_json_constant)
+                except (ValueError,UnicodeDecodeError,RecursionError) as e: raise ValueError('Invalid JSON body') from e
                 if not isinstance(result,dict): raise ValueError('JSON object expected')
                 return result
             def valid_origin(self):
@@ -120,7 +127,7 @@ class App:
                         result=app.score_event(self.read_json());return self.send_json(result,201)
                     if route=='/api/demo/start':
                         payload=self.read_json()
-                        return self.send_json(app.begin_replay(int(payload.get('count',85))),202)
+                        return self.send_json(app.begin_replay(payload.get('count',85)),202)
                     if route=='/api/demo/reset':
                         self.read_json()
                         with app.worker_lock:

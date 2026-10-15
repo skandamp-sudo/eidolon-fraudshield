@@ -1,6 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
-let events = [], lastState = null, drawerId = null, lastCount = -1;
+let events = [], lastState = null, drawerId = null, lastRenderKey = null;
 const h = v => String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money = n => 'SU ' + new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(Number(n)||0);
 const shortMoney = n => {
@@ -23,7 +23,7 @@ function plot(items){
     fill=line+' L'+pts[pts.length-1][0].toFixed(2)+' 200 L'+pts[0][0].toFixed(2)+' 200 Z';
   }$('plot-line').setAttribute('d',line);$('plot-fill').setAttribute('d',fill);
 }
-function row(t){return `<tr data-open-id="${Number(t.id)}"><td><span class="txid">${h(t.txid)}</span></td><td><span class="tx-type">${h(t.type.replace('_',' '))}</span></td><td><span class="amount">${money(t.amount)}</span></td><td><div class="score-cell" style="color:${scoreColor(t.tier)}">${Number(t.score).toFixed(1)}<div class="score-track"><span style="background:${scoreColor(t.tier)};width:${Math.min(100,Math.max(0,t.score))}%"></span></div></div></td><td><span class="risk-tag ${h(t.tier)}">${h(t.tier)}</span></td><td><span class="decision-tag">${h(t.reviewed_as==='UNREVIEWED'?t.decision:t.reviewed_as.replace('_',' '))}</span></td><td class="td-arrow">↗</td></tr>`}
+function row(t){return `<tr data-open-id="${Number(t.id)}" role="button" tabindex="0" aria-label="Investigate transaction ${h(t.txid)}"><td><span class="txid">${h(t.txid)}</span></td><td><span class="tx-type">${h(t.type.replace('_',' '))}</span></td><td><span class="amount">${money(t.amount)}</span></td><td><div class="score-cell" style="color:${scoreColor(t.tier)}">${Number(t.score).toFixed(1)}<div class="score-track"><span style="background:${scoreColor(t.tier)};width:${Math.min(100,Math.max(0,t.score))}%"></span></div></div></td><td><span class="risk-tag ${h(t.tier)}">${h(t.tier)}</span></td><td><span class="decision-tag">${h(t.reviewed_as==='UNREVIEWED'?t.decision:t.reviewed_as.replace('_',' '))}</span></td><td class="td-arrow">↗</td></tr>`}
 function render(state){
   lastState=state;events=state.events;const s=state.summary,r=state.replay;
   $('metric-total').textContent=fmt(s.total);$('hero-processed').textContent=fmt(s.total);
@@ -37,8 +37,9 @@ function render(state){
   $('replay-status').textContent=r.error?('Replay error: '+r.error):r.running?'Streaming transactions through the risk engine…':r.done?'Replay completed. Start another run at any time.':'Stream idle. Start a replay to simulate incoming transactions.';
   $('replay-progress').textContent=`${r.done} / ${r.target}`;
   $('refresh-time').textContent='Updated '+new Date().toLocaleTimeString('en-IN');
-  if(s.total!==lastCount){
-    lastCount=s.total;plot(events);
+  const renderKey=JSON.stringify(events.map(t=>[t.id,t.reviewed_as,t.score]));
+  if(renderKey!==lastRenderKey){
+    lastRenderKey=renderKey;plot(events);
     $('event-rows').innerHTML=events.length?events.map(row).join(''):'<tr><td colspan="7" class="empty">No transactions yet. Start the live replay to populate the system.</td></tr>';
     const alerts=events.filter(x=>x.tier==='HIGH'&&x.reviewed_as==='UNREVIEWED').slice(0,5);
     $('alerts').innerHTML=alerts.length?alerts.map(t=>`<div class="alert" role="button" tabindex="0" data-open-id="${Number(t.id)}"><div class="alert-left"><span class="alert-icon">!</span><div><strong>${h(t.txid)}</strong><small>${h(t.type)} · ${money(t.amount)}</small></div></div><div class="alert-right"><strong>${Number(t.score).toFixed(1)} / 100</strong><small>OPEN CASE →</small></div></div>`).join(''):'<div class="empty-alert">No recent unreviewed high-risk signals. Try a live replay.</div>';
@@ -54,15 +55,15 @@ function showEvent(id){const t=events.find(x=>x.id===id);if(!t)return toast('Tra
 }
 function showManual(){drawerId=null;openDrawer(`<p class="drawer-note">Submit a PaySim-style transaction for an explainable model score. The event will be stored locally in the demo history.</p><form id="score-form"><div class="form-row"><label for="type">TRANSACTION TYPE</label><select name="type" id="type"><option>TRANSFER</option><option>CASH_OUT</option><option>PAYMENT</option><option>CASH_IN</option><option>DEBIT</option></select></div><div class="form-row"><label for="amount">AMOUNT</label><input name="amount" id="amount" type="number" min="0" max="1000000000000" step=".01" value="68000" required></div><div class="form-row"><label for="origin">ORIGIN BALANCE</label><input name="origin" id="origin" type="number" min="0" step=".01" value="72000" required></div><div class="form-row"><label for="destination">DESTINATION BALANCE</label><input name="destination" id="destination" type="number" min="0" step=".01" value="4000" required></div><button class="btn btn-primary" type="submit">Score and record transaction →</button></form>`,'Score a transaction')}
 async function submitManual(form){const data=new FormData(form);try{const result=await api('/api/score','POST',{step:36,type:data.get('type'),amount:Number(data.get('amount')),oldbalanceOrg:Number(data.get('origin')),oldbalanceDest:Number(data.get('destination')),transactionId:'MANUAL-'+Date.now()});closeDrawer();await refresh();showEvent(result.id);toast('Transaction scored and recorded')}catch(err){toast(err.message)}}
-async function disposition(id,value){try{await api('/api/review','POST',{id,disposition:value});closeDrawer();lastCount=-1;await refresh();toast('Analyst review saved in audit history')}catch(err){toast(err.message)}}
+async function disposition(id,value){try{await api('/api/review','POST',{id,disposition:value});closeDrawer();lastRenderKey=null;await refresh();toast('Analyst review saved in audit history')}catch(err){toast(err.message)}}
 function attach(){
   $('replay-btn').addEventListener('click',async()=>{try{await api('/api/demo/start','POST',{count:85});toast('Synthetic replay started');await refresh()}catch(e){toast(e.message)}});
-  $('reset-btn').addEventListener('click',async()=>{if(!confirm('Delete all LOCAL demo transaction and review records?'))return;try{await api('/api/demo/reset','POST',{});lastCount=-1;await refresh();toast('Demo history cleared')}catch(e){toast(e.message)}});
+  $('reset-btn').addEventListener('click',async()=>{if(!confirm('Delete all LOCAL demo transaction and review records?'))return;try{await api('/api/demo/reset','POST',{});lastRenderKey=null;await refresh();toast('Demo history cleared')}catch(e){toast(e.message)}});
   $('manual-btn').addEventListener('click',showManual);$('drawer-close').addEventListener('click',closeDrawer);
   $('overlay').addEventListener('click',e=>{if(e.target.dataset.close)closeDrawer();if(e.target.dataset.disposition&&drawerId!==null)disposition(drawerId,e.target.dataset.disposition)});
   $('drawer-body').addEventListener('submit',e=>{if(e.target.id==='score-form'){e.preventDefault();submitManual(e.target)}});
   document.addEventListener('click',e=>{const tr=e.target.closest('[data-open-id]');if(tr)showEvent(Number(tr.dataset.openId))});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();if(e.key==='Enter'&&e.target.matches('.alert[data-open-id]'))showEvent(Number(e.target.dataset.openId))});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open-id]')){e.preventDefault();showEvent(Number(e.target.dataset.openId))}});
   document.querySelectorAll('.nav-link').forEach(a=>a.addEventListener('click',()=>{document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));a.classList.add('active')}));
 }
 function clock(){const d=new Date();$('clock').textContent=d.toLocaleTimeString('en-IN',{hour12:false})}

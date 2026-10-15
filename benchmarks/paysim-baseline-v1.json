@@ -1,0 +1,78 @@
+{
+  "report_version": "paysim-baseline-v1",
+  "provenance": {
+    "status": "verified against user-supplied local artifact; test not re-evaluated",
+    "artifact_sha256": "2017a5382d3795724023b1f137ecbf96cd8b60311c30e0d64af2cf85318402dd",
+    "dataset_sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
+    "dataset_rows": 6362620,
+    "execution_environment": "user-reported local MacBook; not LinuxONE",
+    "source_commit": "ba953477586d7a08198643bdf277eb6acd1ee8e4",
+    "observed_on": "2026-10-15"
+  },
+  "model": {
+    "version": "paysim-chronological-1",
+    "kind": "logistic regression (single-pass standard-library SGD)",
+    "features": [
+      "log_amount",
+      "high_value_5k",
+      "high_value_20k",
+      "high_value_100k",
+      "is_transfer",
+      "is_cash_out",
+      "is_cash_in",
+      "is_payment",
+      "is_debit",
+      "overnight_simulated_hour"
+    ],
+    "threshold": 0.008
+  },
+  "split": {
+    "train_step_lte": 323,
+    "validation_step_lte": 378,
+    "partitions": {
+      "train": {
+        "rows": 4463587,
+        "positives": 3643
+      },
+      "validation": {
+        "rows": 980416,
+        "positives": 564
+      },
+      "test": {
+        "rows": 918617,
+        "positives": 4006
+      }
+    }
+  },
+  "validation": {
+    "tp": 105,
+    "fp": 782,
+    "fn": 459,
+    "tn": 979070,
+    "precision": 0.118377,
+    "recall": 0.18617,
+    "f1": 0.144728,
+    "false_positive_rate": 0.000798,
+    "alert_count": 887,
+    "base_rate": 0.00057527
+  },
+  "previously_observed_test": {
+    "tp": 806,
+    "fp": 2023,
+    "fn": 3200,
+    "tn": 912588,
+    "precision": 0.284906,
+    "recall": 0.201198,
+    "f1": 0.235845,
+    "false_positive_rate": 0.002212,
+    "alert_count": 2829,
+    "base_rate": 0.0043609,
+    "binned_average_precision": 0.097924
+  },
+  "limitations": [
+    "Test window is previously observed and excluded from Phase 2 tuning and reporting.",
+    "Average precision is a 10001-bin approximation, not exact AP.",
+    "Dataset is simulated; these results do not establish bank performance.",
+    "Original model artifacts are preserved outside Git."
+  ]
+}

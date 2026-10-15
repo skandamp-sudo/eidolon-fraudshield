@@ -1,0 +1,2 @@
+# Runtime and synthetic model training use Python 3.10+ standard library only.
+# No pip install required.

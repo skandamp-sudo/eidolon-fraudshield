@@ -1,52 +1,56 @@
-# IBM Z / LinuxONE deployment runbook
+# IBM Z / LinuxONE verification runbook
 
-## 1. Register and provision
+**Status:** prepared instructions only. No access to an IBM Z or LinuxONE VM was available in this checkout; no `s390x` test, deployment or performance result is claimed.
 
-Event instructions specify [LinuxONE Community Cloud](https://linuxone.cloud.marist.edu/#/register?flag=VM) and event code **SSF2026**. Complete the **mandatory Oct 16, 2026 7:30 PM IST** onboarding session and follow current organizer guidance. Add team/project description to the VM application. Configure your own SSH key. Do not commit private SSH keys.
+## 1. Provision an authorized VM
 
-The organizer-provided [LinuxONE ML examples](https://github.com/linuxone-community-cloud/jupyter-lab-ml) include an existing fraud-detection notebook. Unlike that optional example, FRAUDSHIELD does **not** require Docker or JupyterLab to run; it is a standard-library Python program.
+Use the [LinuxONE Community Cloud](https://linuxone.cloud.marist.edu/) portal and current organizer instructions. The [community ML example](https://github.com/linuxone-community-cloud/jupyter-lab-ml) documents SSH-key and VM provisioning, but its container/Jupyter setup is optional and is not a FRAUDSHIELD dependency. Confirm the VM username, hostname and access method in the portal. Keep SSH private keys outside the repository.
 
-## 2. Transfer project
+## 2. Transfer only tracked source
 
-From your laptop, once the VM's SSH username and hostname have been confirmed by the provider:
+From the committed feature branch on your laptop:
 
 ```bash
-scp -r eidolon-fraudshield <username>@<VM_HOST>:~/
+git archive --format=tar.gz --output=/tmp/fraudshield-source.tgz HEAD
+scp /tmp/fraudshield-source.tgz <username>@<VM_HOST>:~/
 ssh <username>@<VM_HOST>
 ```
 
-Set restrictive permissions for local data and run:
+`git archive` excludes untracked local SQLite files, downloaded PaySim CSVs and local model artifacts. Do not transfer customer data, secrets or the demo's local database.
+
+On the VM:
 
 ```bash
+umask 077
+mkdir -p ~/eidolon-fraudshield
+tar -xzf ~/fraudshield-source.tgz -C ~/eidolon-fraudshield
 cd ~/eidolon-fraudshield
-uname -m                 # record architecture, expected s390x
-python3 --version        # requires Python >=3.10
-python3 -m unittest discover -s tests -v
+uname -m
+python3 --version
+python3 -B -m unittest discover -s tests -v
 python3 run.py
 ```
 
-The app listens **only on 127.0.0.1:8000** by default; this is intentional.
+Record the actual output. Proceed only if `uname -m` prints `s390x`, Python is 3.10 or newer, and the tests pass. The project uses Python's standard library and SQLite module; check `python3 -c 'import sqlite3; print(sqlite3.sqlite_version)'` if SQLite is missing. The server binds to loopback and rejects wider binding.
 
-## 3. View remotely over SSH tunnel
+## 3. View through an SSH tunnel
 
-In a second terminal on your laptop:
+In a second laptop terminal:
 
 ```bash
 ssh -L 8000:127.0.0.1:8000 <username>@<VM_HOST>
 ```
 
-Then browse `http://127.0.0.1:8000` locally. Do not blindly bind to `0.0.0.0` or open the unauthenticated demo service to the Internet. If the cloud provider restricts tunneling, use an organizer-approved access method instead.
+Open `http://127.0.0.1:8000` on the laptop. Confirm `/api/health`, run the synthetic replay, score a manual event, refresh the page and record a review disposition. Verify the event and review survive a server restart. The app does not require Docker, paid APIs or public HTTP exposure.
 
-## 4. Record proof of actual IBM Z use
+## 4. Capture reproducible evidence
 
-- Save `uname -m`, `python3 --version`, local test output, VM details (without secrets) and a UI screenshot.
-- Capture a timed replay, event scoring and a recorded review decision.
-- Collect **actual hardware** latency/throughput measurements. Do not claim IBM Z speedups until a fair baseline comparison is run.
-- Ensure the project is on LinuxONE before submission and explicitly link the implementation to IBM Z in the pitch.
+Save the VM architecture, OS and Python versions, exact Git commit, full test output, health response, synthetic replay count, restart/readback result and a timestamped screenshot. Remove hostnames, usernames, keys and any sensitive data before sharing. Label the dashboard metrics as synthetic. If measuring latency or throughput, record the command, dataset/fixture, concurrency, sample count and host details; report measured values only. A laptop run or an emulated `s390x` environment does not establish deployment on actual LinuxONE hardware.
 
-## 5. Troubleshooting
+## 5. Failure handling
 
-- Port busy: `PORT=8001 python3 run.py` plus matching tunnel port mapping.
-- Python too old: use a supported Python 3.10+ environment following the LinuxONE instructions.
-- No outside networking: perform install/transfer over permitted SCP/SSH channels; no third-party Python packages are needed.
-- If Jupyter Lab is required by the organizers, consult the [official community example repository](https://github.com/linuxone-community-cloud/jupyter-lab-ml) rather than changing this prototype to require a container.
+- If `uname -m` differs from `s390x`, stop and verify the provisioned VM.
+- If Python is older than 3.10, use an organizer-supported interpreter; do not change the app's language requirement silently.
+- If the suite fails, preserve the output and fix the cause before claiming verification.
+- If the tunnel is unavailable, use only an organizer-approved private access method. Never bind this unauthenticated demo to `0.0.0.0`.
+- If the default port is occupied, use `PORT=8001 python3 run.py` and `ssh -L 8001:127.0.0.1:8001 ...`.

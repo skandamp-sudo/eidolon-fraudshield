@@ -24,8 +24,9 @@ BINS = 10_000
 
 def rows(path: Path):
     """Read a sorted, canonical PaySim CSV without retaining account IDs or balances."""
+    csv.field_size_limit(4096)
     with path.open(newline='', encoding='utf-8-sig') as source:
-        reader = csv.DictReader(source)
+        reader = csv.DictReader(source, strict=True)
         names = reader.fieldnames or []
         if len(names) != len(set(names)) or not REQUIRED.issubset(names):
             raise ValueError('PaySim CSV has missing or duplicate required columns')
@@ -34,7 +35,7 @@ def rows(path: Path):
             if None in row or any(value is None for value in row.values()):
                 raise ValueError(f'Malformed CSV row at line {line}')
             raw_step = row['step']
-            if not raw_step.isascii() or not raw_step.isdecimal():
+            if len(raw_step) > 8 or not raw_step.isascii() or not raw_step.isdecimal():
                 raise ValueError(f'Invalid step at line {line}')
             step = int(raw_step)
             if step < previous:
@@ -51,10 +52,10 @@ def rows(path: Path):
 
 def inspect(path: Path):
     counts = {}
-    positives = {}
-    for step, _features, label in rows(path):
+    for step, _features, _label in rows(path):
         counts[step] = counts.get(step, 0) + 1
-        positives[step] = positives.get(step, 0) + label
+        if len(counts) > 10_000:
+            raise ValueError('PaySim CSV exceeds 10,000 distinct time steps')
     total = sum(counts.values())
     if len(counts) < 3:
         raise ValueError('At least three distinct time steps are required')
@@ -69,15 +70,12 @@ def inspect(path: Path):
             valid_end = step
     if valid_end is None or valid_end == steps[-1]:
         raise ValueError('Chronological split leaves no validation or test time steps')
-    parts = {'train': {'rows': 0, 'positives': 0},
-             'validation': {'rows': 0, 'positives': 0},
-             'test': {'rows': 0, 'positives': 0}}
+    parts = {'train': {'rows': 0}, 'validation': {'rows': 0}, 'test': {'rows': 0}}
     for step in steps:
         part = 'train' if step <= train_end else 'validation' if step <= valid_end else 'test'
         parts[part]['rows'] += counts[step]
-        parts[part]['positives'] += positives[step]
-    if any(not part['rows'] or not part['positives'] for part in parts.values()):
-        raise ValueError('Every chronological partition needs rows and positive labels')
+    if any(not part['rows'] for part in parts.values()):
+        raise ValueError('Every chronological partition needs rows')
     return train_end, valid_end, parts
 
 
@@ -126,13 +124,15 @@ def binned_average_precision(positive, negative):
 def train_and_evaluate(source: Path, output: Path):
     source = Path(source)
     output = Path(output)
+    if output.resolve() == source.resolve():
+        raise ValueError('Model output must not overwrite the source CSV')
     if output.resolve() == (Path(__file__).resolve().parents[1] / 'models' / 'baseline.json').resolve():
         raise ValueError('PaySim model must not replace the bundled demo baseline')
     before = source.stat()
     train_end, valid_end, parts = inspect(source)
     weights = [0.0] * len(FEATURE_NAMES)
     bias = -4.0
-    seen = 0
+    seen = train_positives = 0
     for step, features, label in rows(source):
         if step > train_end:
             continue
@@ -141,24 +141,48 @@ def train_and_evaluate(source: Path, output: Path):
         for index, value in enumerate(features):
             weights[index] -= .015 * (diff * value + .000025 * weights[index])
         seen += 1
+        train_positives += label
     if seen != parts['train']['rows']:
         raise ValueError('PaySim source changed during training')
+    if not train_positives:
+        raise ValueError('Training partition has no positive labels')
+    parts['train']['positives'] = train_positives
+    # Evaluate precisely the parameters that the saved artifact will load.
+    weights = [round(weight, 8) for weight in weights]
+    bias = round(bias, 8)
     valid_pos, valid_neg, count = histogram(source, train_end, valid_end, weights, bias)
     if count != parts['validation']['rows']:
         raise ValueError('PaySim source changed during validation')
-    threshold_bin = max(range(1, BINS + 1),
-                        key=lambda index: (evaluate(valid_pos, valid_neg, index)['f1'], index))
+    if not sum(valid_pos):
+        raise ValueError('Validation partition has no positive labels')
+    parts['validation']['positives'] = sum(valid_pos)
+    total_positives = sum(valid_pos)
+    tp = fp = 0
+    best = (-1.0, 0)
+    threshold_bin = 1
+    tp += valid_pos[BINS]
+    fp += valid_neg[BINS]
+    for index in range(BINS - 1, 0, -1):
+        tp += valid_pos[index]
+        fp += valid_neg[index]
+        f1 = 2 * tp / (total_positives + tp + fp) if total_positives + tp + fp else 0.0
+        if (f1, index) > best:
+            best = (f1, index)
+            threshold_bin = index
     test_pos, test_neg, count = histogram(source, valid_end, math.inf, weights, bias)
     if count != parts['test']['rows'] or (source.stat().st_size, source.stat().st_mtime_ns) != (before.st_size, before.st_mtime_ns):
         raise ValueError('PaySim source changed during evaluation')
+    parts['test']['positives'] = sum(test_pos)
     digest = hashlib.sha256()
     with source.open('rb') as file:
         for chunk in iter(lambda: file.read(1024 * 1024), b''):
             digest.update(chunk)
+    if (source.stat().st_size, source.stat().st_mtime_ns) != (before.st_size, before.st_mtime_ns):
+        raise ValueError('PaySim source changed during hashing')
     artifact = {'version': 'paysim-chronological-1', 'kind': 'logistic regression (single-pass standard-library SGD)',
                 'data_origin': 'user-supplied PaySim synthetic CSV', 'source_sha256': digest.hexdigest(),
-                'features': FEATURE_NAMES, 'weights': [round(w, 8) for w in weights],
-                'bias': round(bias, 8), 'threshold': threshold_bin / BINS,
+                'features': FEATURE_NAMES, 'weights': weights,
+                'bias': bias, 'threshold': threshold_bin / BINS,
                 'split': {'train_step_lte': train_end, 'validation_step_lte': valid_end, 'partitions': parts},
                 'validation': evaluate(valid_pos, valid_neg, threshold_bin),
                 'test': {**evaluate(test_pos, test_neg, threshold_bin),

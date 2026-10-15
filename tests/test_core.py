@@ -5,7 +5,7 @@ from http.server import ThreadingHTTPServer
 from fraudshield.features import clean_event,vector,FEATURE_NAMES
 from fraudshield.model import RiskModel
 from fraudshield.store import Store
-from fraudshield.server import App, ROOT
+from fraudshield.server import App, ROOT, serve
 from fraudshield.synthetic import generate
 from fraudshield.train import metrics,average_precision
 
@@ -21,8 +21,24 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(len(vector(event)),len(FEATURE_NAMES))
 
     def test_untrusted_inputs_rejected(self):
-        for raw in [dict(type='WIRE',amount=10),dict(type='TRANSFER',amount=-1),dict(type='TRANSFER',amount=float('nan'))]:
+        for raw in [dict(type='WIRE',amount=10),dict(type='TRANSFER',amount=-1),
+                    dict(type='TRANSFER',amount=float('nan')),
+                    dict(type='TRANSFER',amount=10,step=1.5),
+                    dict(type='TRANSFER',amount=10,step=True),
+                    dict(type='TRANSFER',amount=True)]:
             with self.assertRaises(ValueError):clean_event(raw)
+
+    def test_malformed_model_rejected(self):
+        with TemporaryDirectory() as temp:
+            artifact=json.loads((ROOT/'models'/'baseline.json').read_text())
+            artifact['weights'].pop()
+            path=Path(temp)/'model.json';path.write_text(json.dumps(artifact))
+            with self.assertRaisesRegex(ValueError,'Invalid model artifact'):
+                RiskModel(path)
+
+    def test_non_loopback_server_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'loopback only'):
+            serve(host='0.0.0.0')
 
     def test_demo_reproducibility(self):
         self.assertEqual(list(generate(8,seed=12)),list(generate(8,seed=12)))
@@ -45,6 +61,8 @@ class CoreTests(unittest.TestCase):
             self.assertEqual(store.summary()['total'],1)
             store.review(id,'INVESTIGATING')
             self.assertEqual(store.events()[0]['reviewed_as'],'INVESTIGATING')
+            store.insert(event,{**result,'tier':'HIGH'},truth=0)
+            self.assertEqual(store.summary()['pending'],1)
             store.reset();self.assertEqual(store.summary()['total'],0)
 
     def test_background_replay(self):
@@ -69,7 +87,15 @@ class CoreTests(unittest.TestCase):
                 conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=5)
                 conn.request('GET','/api/health');res=conn.getresponse();health=json.loads(res.read())
                 self.assertEqual(res.status,200);self.assertTrue(health['ok'])
+                conn.request('GET','/api/state',headers={'Host':'attacker.example'})
+                res=conn.getresponse();self.assertEqual(res.status,403);res.read()
                 event,_=next(generate(1));payload=json.dumps(event)
+                conn.request('POST','/api/score',payload,{'Content-Type':'text/plain'})
+                res=conn.getresponse();self.assertEqual(res.status,400);res.read()
+                conn.request('POST','/api/score','{"type":"TRANSFER","amount":NaN}',{'Content-Type':'application/json'})
+                res=conn.getresponse();self.assertEqual(res.status,400);res.read()
+                conn.request('POST','/api/score',payload,{'Content-Type':'application/json','Origin':'http://attacker.example'})
+                res=conn.getresponse();self.assertEqual(res.status,403);res.read()
                 conn.request('POST','/api/score',payload,{'Content-Type':'application/json'})
                 res=conn.getresponse();event_result=json.loads(res.read())
                 self.assertEqual(res.status,201);self.assertIn('id',event_result)

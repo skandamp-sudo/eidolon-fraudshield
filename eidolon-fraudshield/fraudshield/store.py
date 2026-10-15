@@ -71,7 +71,7 @@ class Store:
             row=con.execute('''SELECT COUNT(*) AS total,
               COALESCE(SUM(tier='HIGH'),0) AS high,
               COALESCE(SUM(tier='MEDIUM'),0) AS medium,
-              COALESCE(SUM(tier='MEDIUM' AND reviewed_as='UNREVIEWED'),0) AS pending,
+              COALESCE(SUM(tier IN ('HIGH','MEDIUM') AND reviewed_as='UNREVIEWED'),0) AS pending,
               COALESCE(SUM(tier='LOW'),0) AS low,
               COALESCE(SUM(amount),0) AS volume,
               COALESCE(AVG(score),0) AS average_score,

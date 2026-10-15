@@ -12,12 +12,16 @@ The included model is a **functional dependency-free starter baseline**, not a v
 - Metrics: see `models/baseline.json`; reports F1, precision, recall, false-positive rate and average precision
 - Scoring: 0–100 uncalibrated model score; contribution explanations, not causal attributions
 
-## Next rigorous benchmark
+## Separate PaySim temporal pipeline
+
+`python3 scripts/train_paysim.py /path/to/paysim.csv` requires a user-supplied canonical CSV ordered by nondecreasing `step`. It makes one metadata pass, one training pass, one validation pass and one future-test pass. All rows in a step stay in one partition. Threshold selection uses validation F1 only. Features are fixed to `step`, `type` and `amount`; label, flag, balances and account IDs are excluded. The CSV SHA-256 and split/count metadata are recorded with the local artifact. Average precision is approximated with 10,001 score bins; confusion counts and alert volume use the same persisted, rounded model parameters. This pipeline has only been exercised on small synthetic test fixtures in this checkout. **No full PaySim dataset or LinuxONE result is available here.**
+
+## Further scientific work
 
 1. Download and document PaySim dataset version and license/usage terms. It is **synthetic**, not live bank records.
-2. Use an agreed chronological split in PaySim by time-step, keeping time steps entirely within one partition. Do not use the label, `isFlaggedFraud`, name ID leakage or **any PaySim balance fields** as predictive features (dataset author warning).
-3. Train logistic regression and gradient boosted trees on training time steps only; tune threshold using validation steps only. Never report a resampled/downsampled evaluation set as if it represented natural fraud prevalence.
-4. Evaluate once on the untouched future time window. Report PR-AUC, fraud-class precision and recall, confusion matrix, false-positive rate, alert volume at the natural base rate, and 95% bootstrap uncertainty where viable.
+2. Verify the provided CSV's provenance, sorting, expected schema, step coverage and class counts before treating the pipeline output as a benchmark. No model or claim should use label, `isFlaggedFraud`, account ID or **any PaySim balance field** as a predictor.
+3. Compare additional models on the identical predeclared steps, fitting transformations on training steps only. Never report a resampled/downsampled evaluation set as if it represented natural fraud prevalence.
+4. Add exact PR-AUC and uncertainty analysis if resources permit; preserve the untouched future time window and report fraud-class precision/recall, confusion matrix, false-positive rate and alert volume at the natural base rate.
 5. Compare models on identical splits, report decision latency percentiles p50/p95/p99 and throughput, and benchmark on actual IBM LinuxONE hardware.
 6. If using the ULB Credit Card Fraud dataset, recognize its anonymized `Time`/`Amount` + PCA features are a **different input schema**. Train a separate adapter/model; do not feed it to the PaySim schema as though equivalent.
 7. Observe possible concept drift and feature/schema evolution. Document drift measurements and how the alerts are evaluated by an analyst.

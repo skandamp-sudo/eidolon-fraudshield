@@ -1,6 +1,6 @@
 """Zero-runtime-dependency HTTP API and static web server (localhost by default)."""
 from __future__ import annotations
-import json, mimetypes, os, threading, time, traceback
+import json, threading, time, traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit,parse_qs
@@ -10,6 +10,9 @@ from .store import Store
 from .synthetic import generate
 
 ROOT=Path(__file__).resolve().parents[1]
+
+def reject_json_constant(value):
+    raise ValueError(f'Invalid JSON constant: {value}')
 
 class App:
     def __init__(self,root=ROOT,database=None):
@@ -27,7 +30,7 @@ class App:
         return result
 
     def begin_replay(self,count=85,speed=.16):
-        if not isinstance(count,int) or count<1 or count>300:
+        if isinstance(count,bool) or not isinstance(count,int) or count<1 or count>300:
             raise ValueError('count must be 1..300')
         with self.worker_lock:
             if self.replay['running']:
@@ -59,6 +62,9 @@ class App:
         app=self
         class Handler(BaseHTTPRequestHandler):
             server_version='FraudShield/0.1'
+            def setup(self):
+                super().setup()
+                self.connection.settimeout(10)
             def log_message(self,format,*args):
                 print(f'[{self.log_date_time_string()}] {format%args}')
             def send_bytes(self,body,status=200,ctype='application/json; charset=utf-8'):
@@ -76,15 +82,27 @@ class App:
             def err(self,msg,status=400):
                 self.send_json({'error':msg},status)
             def read_json(self):
+                if self.headers.get('Transfer-Encoding'):
+                    raise ValueError('Transfer-Encoding is not supported')
+                if self.headers.get_content_type() != 'application/json':
+                    raise ValueError('Content-Type must be application/json')
                 try: size=int(self.headers.get('Content-Length','0'))
                 except ValueError: raise ValueError('Invalid Content-Length')
                 if size<=0 or size>65_536: raise ValueError('JSON payload must be 1 to 65536 bytes')
-                try: result=json.loads(self.rfile.read(size))
-                except (ValueError,UnicodeDecodeError) as e: raise ValueError('Invalid JSON body') from e
+                try:
+                    result=json.loads(self.rfile.read(size), parse_constant=reject_json_constant)
+                except (ValueError,UnicodeDecodeError,RecursionError) as e: raise ValueError('Invalid JSON body') from e
                 if not isinstance(result,dict): raise ValueError('JSON object expected')
                 return result
+            def valid_origin(self):
+                host=self.headers.get('Host','')
+                if host not in {f'{name}:{self.server.server_port}' for name in ('127.0.0.1','localhost')} | {'127.0.0.1','localhost'}:
+                    return False
+                origin=self.headers.get('Origin')
+                return not origin or origin == f'http://{host}'
             def do_GET(self):
                 try:
+                    if not self.valid_origin(): return self.err('Invalid host or origin',403)
                     parsed=urlsplit(self.path);route=parsed.path
                     if route=='/api/health': return self.send_json({'ok':True,'name':'EIDOLON FRAUDSHIELD','mode':'demo','model':app.model.artifact['version']})
                     if route=='/api/state':return self.send_json(app.state())
@@ -103,17 +121,19 @@ class App:
                     traceback.print_exc();self.err('Internal server error',500)
             def do_POST(self):
                 try:
+                    if not self.valid_origin(): return self.err('Invalid host or origin',403)
                     parsed=urlsplit(self.path);route=parsed.path
                     if route=='/api/score':
                         result=app.score_event(self.read_json());return self.send_json(result,201)
                     if route=='/api/demo/start':
                         payload=self.read_json()
-                        return self.send_json(app.begin_replay(int(payload.get('count',85))),202)
+                        return self.send_json(app.begin_replay(payload.get('count',85)),202)
                     if route=='/api/demo/reset':
                         self.read_json()
                         with app.worker_lock:
                             if app.replay['running']:return self.err('Stop replay before reset',409)
-                        app.store.reset();return self.send_json({'ok':True})
+                            app.store.reset()
+                        return self.send_json({'ok':True})
                     if route=='/api/review':
                         payload=self.read_json()
                         app.store.review(int(payload['id']),str(payload['disposition']))
@@ -126,6 +146,8 @@ class App:
         return Handler
 
 def serve(host='127.0.0.1',port=8000):
+    if host not in ('127.0.0.1','localhost'):
+        raise ValueError('Unauthenticated demo must bind to loopback only')
     app=App()
     http=ThreadingHTTPServer((host,port),app.handler())
     print(f'\n  EIDOLON // FRAUDSHIELD  →  http://{host}:{port}\n  Mode: synthetic demo • no live financial data\n  Ctrl+C to stop\n')

@@ -2,7 +2,7 @@
 
 **Explainable financial fraud intelligence — IBM Z Datathon 2026 proof of concept.**
 
-> **Status: working local MVP, NOT a production fraud platform.** The included classifier is trained and measured **only on our generated synthetic examples**. Its 0–100 output is a model risk score, not a calibrated probability. PaySim (a separate synthetic dataset) integration is included for replay/evaluation, but the model is **not trained on PaySim** yet. No money is moved, no accounts are blocked, and no real customer data is required. The dashboard displays monetary values as **SU (simulation units)**, not rupees or any asserted bank currency.
+> **Status: working local MVP, NOT a production fraud platform.** The dashboard's bundled classifier is trained and measured **only on our generated synthetic examples**. Its 0–100 output is a model risk score, not a calibrated probability. A separate, optional PaySim training pipeline exists, but its artifact is never loaded by the demo automatically. No money is moved, no accounts are blocked, and no real customer data is required. The dashboard displays monetary values as **SU (simulation units)**, not rupees or any asserted bank currency.
 
 ![Screenshot of the demo dashboard with simulated records](dashboard-preview.png)
 
@@ -15,6 +15,7 @@
 - Persistent SQLite transaction history, analyst review actions, review audit log
 - Synthetic test precision/recall/F1/false-positive-rate metrics included in the model artifact
 - PaySim CSV replay and streaming external-dataset evaluation utilities
+- Separate, streaming PaySim training with whole-step chronological partitions and a future-step test
 - Dependency-free runtime and tests: **Python 3.10+, no Docker, no Node, no API key, no pip install**
 
 ## Quick start
@@ -62,7 +63,15 @@ python3 scripts/evaluate_paysim.py /path/to/paysim.csv --min-step 600
 
 **Interpretation warning:** This is an out-of-domain generalization check, not a holdout result from PaySim model training. The synthetic-trained baseline may perform poorly. The next scientific milestone is a *separate* PaySim-trained model and temporal test set.
 
-**Leakage warning:** PaySim's dataset description states that fraud is cancelled and explicitly cautions against using origin/destination balance columns as predictive inputs. This app accepts these fields for compatibility/display but **never uses either pre- or post-transaction balances as model features**, nor `isFraud` or `isFlaggedFraud`. Fraud labels are used only for separate offline evaluation.
+To train and evaluate a **separate** PaySim model after obtaining the canonical CSV:
+
+```bash
+python3 scripts/train_paysim.py /path/to/paysim.csv
+```
+
+The input must have the canonical PaySim columns and be sorted by nondecreasing `step`. The pipeline uses whole steps for training (first ~70% of rows), validation (next ~15%) and untouched future-step testing (remainder). It chooses the decision threshold on validation only, then evaluates test once. The local result is saved to ignored `models/paysim.local.json`; the dashboard still loads `models/baseline.json`. Training uses one streaming SGD pass and a 10,001-bin approximation for average precision to bound memory. The output records the CSV SHA-256, split boundaries, counts, natural class prevalence, confusion matrix and alert volume. The CSV is not bundled here, and **no PaySim training or test metrics have been produced for this repository**.
+
+**Leakage warning:** [PaySim's dataset description](https://www.kaggle.com/ealaxi/paysim1) states that fraud is cancelled and cautions against using origin/destination balance columns as predictive inputs. The model feature map uses only `step`, `type` and `amount`; the offline pipeline reads `isFraud` separately as the target. Account identifiers, balance columns and `isFlaggedFraud` are never predictors. The demo API still accepts pre-transaction balances for display.
 
 ## System diagram
 
@@ -116,7 +125,7 @@ curl -X POST http://127.0.0.1:8000/api/score \
 - Metrics from `models/baseline.json` apply **only** to our generated synthetic distribution.
 - Explanations list positive logistic feature contributions, not counterfactual or causal evidence.
 - No data drift monitoring, calibrated probabilities, authentication, production throughput/latency SLOs or real banking integration yet.
-- For public deployment, add auth, rate limiting, transport security, CSRF protection, access controls, retention policy and audit integrity. **Never expose this development server to the open Internet.**
+- The unauthenticated development server now rejects non-loopback binding, unexpected Host/Origin values and non-JSON mutation requests. Local processes remain able to call its API. For any shared deployment, add authentication, access controls, transport security, retention policy and audit integrity. **Never expose this development server to the open Internet.**
 
 ## Event schedule (IST)
 
@@ -124,12 +133,12 @@ curl -X POST http://127.0.0.1:8000/api/score \
 - **Oct 17, 2026, 9–10 AM** — global Datathon kickoff; final-project submission opens at 10 AM
 - **Oct 18, 2026, 10 AM** — team lead's final project submission deadline
 
-See [IBM Z deployment instructions](docs/IBM_Z_DEPLOYMENT.md) and [scientific validation roadmap](docs/VALIDATION.md).
+See [IBM Z deployment instructions](docs/IBM_Z_DEPLOYMENT.md), [scientific validation plan](docs/VALIDATION.md) and [engineering audit](docs/AUDIT.md).
 
 ## Roadmap
 
 1. **Built:** functional synthetic end-to-end demonstrator with recording and analyst review.
-2. **Next:** temporal PaySim dataset training, explainable tree-model benchmark, precision–recall curves, threshold/latency benchmarking.
+2. **Prepared, not run on the full dataset:** temporal PaySim training and evaluation. Future work includes comparison models, uncertainty estimates and latency benchmarking.
 3. **Next:** deploy and verify on actual IBM LinuxONE `s390x`, capture host diagnostics and demo evidence.
 4. **Next:** final pitch, architecture, risk/limitations slides and recorded walkthrough.
 

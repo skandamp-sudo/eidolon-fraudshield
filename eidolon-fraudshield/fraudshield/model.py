@@ -14,6 +14,16 @@ class RiskModel:
         self.weights = self.artifact['weights']
         self.bias = self.artifact['bias']
         self.threshold = self.artifact['threshold']
+        if (not isinstance(self.weights, list) or len(self.weights) != len(FEATURE_NAMES)
+                or any(isinstance(w, bool) or not isinstance(w, (int, float)) or not math.isfinite(w)
+                       for w in self.weights)
+                or isinstance(self.bias, bool) or not isinstance(self.bias, (int, float))
+                or not math.isfinite(self.bias)
+                or isinstance(self.threshold, bool) or not isinstance(self.threshold, (int, float))
+                or not math.isfinite(self.threshold) or not 0 < self.threshold < 1
+                or not isinstance(self.artifact.get('version'), str)
+                or not self.artifact['version']):
+            raise ValueError('Invalid model artifact parameters')
 
     def predict(self, event: dict) -> dict:
         feats = vector(event)

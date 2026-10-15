@@ -1,0 +1,71 @@
+{
+  "status": "measured_local_inference_only",
+  "artifact_sha256": "4278a146ef1bd77039173e5083d6609e5b8fa8c417988cdfd905fecb0de06363",
+  "dataset_sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
+  "measured_at_utc": "2026-10-15T18:10:15.504583+00:00",
+  "environment": {
+    "platform": "macOS-26.7.1-x86_64-i386-64bit-Mach-O",
+    "machine": "x86_64",
+    "python": "3.14.7",
+    "implementation": "CPython"
+  },
+  "method": {
+    "fixture": "256 deterministic amount/type/step edge events, no labels",
+    "concurrency": 1,
+    "warmup_per_mode": 100,
+    "iterations_per_repeat": 10000,
+    "repeats": 3,
+    "clock": "perf_counter_ns",
+    "scope": "in-process inference, includes timing overhead; excludes model load, HTTP and SQLite"
+  },
+  "measurements": {
+    "feature_vector_inference": {
+      "runs": [
+        {
+          "seconds": 0.427045429,
+          "inferences_per_second": 23416.712417263694
+        },
+        {
+          "seconds": 0.446458528,
+          "inferences_per_second": 22398.496999927393
+        },
+        {
+          "seconds": 0.412702533,
+          "inferences_per_second": 24230.527317844208
+        }
+      ],
+      "samples": 30000,
+      "latency_microseconds": {
+        "mean": 42.6771336,
+        "p50": 41.259,
+        "p95": 65.29,
+        "p99": 109.612
+      },
+      "median_inferences_per_second": 23416.712417263694
+    },
+    "event_validation_features_and_inference": {
+      "runs": [
+        {
+          "seconds": 0.480252792,
+          "inferences_per_second": 20822.367233629742
+        },
+        {
+          "seconds": 0.472050062,
+          "inferences_per_second": 21184.193806969568
+        },
+        {
+          "seconds": 0.474715517,
+          "inferences_per_second": 21065.247799768047
+        }
+      ],
+      "samples": 30000,
+      "latency_microseconds": {
+        "mean": 47.3796024,
+        "p50": 46.434,
+        "p95": 65.056,
+        "p99": 115.608
+      },
+      "median_inferences_per_second": 21065.247799768047
+    }
+  }
+}

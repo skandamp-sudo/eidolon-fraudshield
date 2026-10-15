@@ -1,0 +1,80 @@
+{
+  "version": "paysim-portable-phase3-v1",
+  "status": "portable_parity_passed_not_independent_validation",
+  "protocol_sha256": "3219add3a60edab082cab44e36e01559372d46bded115672b5d1d1af0e806673",
+  "artifact_sha256": "4278a146ef1bd77039173e5083d6609e5b8fa8c417988cdfd905fecb0de06363",
+  "artifact_bytes": 108717,
+  "golden_vectors_sha256": "44486332bb86c7acda7e566e2feaf5608843ed80c21e0e33453fac2404bbf166",
+  "provenance": {
+    "dataset_sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
+    "baseline_artifact_sha256": "2017a5382d3795724023b1f137ecbf96cd8b60311c30e0d64af2cf85318402dd",
+    "phase2_protocol_sha256": "96eac5e83b13d35d1a22dfd7218df96662d01277276d1533798dcc3eedef760c",
+    "phase2_report_sha256": "462d3048c4b0c24c1c8969ac087e18d1edc67413cb0a67c18f5e67e38396e7e9",
+    "training_rows": 4463587,
+    "training_step_lte": 323,
+    "seed": 74,
+    "training_recipe": "hist_tree_leaf7_balanced",
+    "sklearn_version": "1.7.2",
+    "exporter_sha256": "ca330e7fd405820b8f77fb99368605791f469481f8e4b2b8b5411a25190772c4",
+    "portable_source_sha256": "9da213b7f8d48d91dbb6e4c26fa6c8d7a309e7b9bfd1d8544bb539f050556c25",
+    "base_features_sha256": "8b00f0d0730d63d9702f2fa02fa01c482e93b77f585e29766bdc14a8c2126fa6"
+  },
+  "locked_thresholds": {
+    "max_f1": 0.9833296104213592,
+    "capacity_1_per_10000": 0.9920375045545163,
+    "capacity_5_per_10000": 0.9688171814001637,
+    "capacity_10_per_10000": 0.9642966278892878,
+    "capacity_25_per_10000": 0.9416149137015878,
+    "capacity_50_per_10000": 0.9296536824117786
+  },
+  "trees": 100,
+  "nodes": 1300,
+  "parity": {
+    "synthetic_and_boundary": {
+      "vectors": 4320,
+      "max_absolute_error": 1.1102230246251565e-16,
+      "decision_mismatches": {
+        "max_f1": 0,
+        "capacity_1_per_10000": 0,
+        "capacity_5_per_10000": 0,
+        "capacity_10_per_10000": 0,
+        "capacity_25_per_10000": 0,
+        "capacity_50_per_10000": 0
+      },
+      "absolute_tolerance": 1e-12
+    },
+    "synthetic_events": 2520,
+    "split_boundary_vectors": 1800,
+    "training_only": {
+      "vectors": 4096,
+      "max_absolute_error": 1.1102230246251565e-16,
+      "decision_mismatches": {
+        "max_f1": 0,
+        "capacity_1_per_10000": 0,
+        "capacity_5_per_10000": 0,
+        "capacity_10_per_10000": 0,
+        "capacity_25_per_10000": 0,
+        "capacity_50_per_10000": 0
+      },
+      "absolute_tolerance": 1e-12
+    }
+  },
+  "fit_seconds": 25.19298671500019,
+  "elapsed_seconds": 89.74934597900028,
+  "environment": {
+    "python": "3.14.7",
+    "platform": "macOS-26.7.1-x86_64-i386-64bit-Mach-O",
+    "dependencies": {
+      "numpy": "2.3.4",
+      "scipy": "1.16.2",
+      "scikit-learn": "1.7.2",
+      "joblib": "1.5.2",
+      "threadpoolctl": "3.6.0"
+    }
+  },
+  "limitations": [
+    "Reconstructed locked recipe; original fitted Phase 2 estimator was not saved.",
+    "No independent fraud evaluation, confirmation rerun or previously exposed holdout evaluation.",
+    "No s390x hardware tested. Artifact and golden fixtures remain outside Git."
+  ]
+}

@@ -54,3 +54,7 @@ Save the VM architecture, OS and Python versions, exact Git commit, full test ou
 - If the suite fails, preserve the output and fix the cause before claiming verification.
 - If the tunnel is unavailable, use only an organizer-approved private access method. Never bind this unauthenticated demo to `0.0.0.0`.
 - If the default port is occupied, use `PORT=8001 python3 run.py` and `ssh -L 8001:127.0.0.1:8001 ...`.
+
+## Phase 3 portable-model demonstration
+
+Follow [the portable inference runbook](PHASE3_PORTABLE_RUNBOOK.md) to transfer the separately exported JSON model and verify scores without NumPy, SciPy or scikit-learn. Keep the synthetic dashboard running as the default and present the portable CLI result separately. [Local measured evidence](PHASE3_RESULTS.md) does not establish s390x execution; actual VM checks and inference timings remain required.

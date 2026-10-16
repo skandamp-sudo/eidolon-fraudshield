@@ -75,6 +75,10 @@ The input must have the canonical PaySim columns and be sorted by nondecreasing 
 
 The optional [Phase 2 runner](docs/PHASE2_REPRODUCIBILITY.md) compares batch logistic models and histogram trees using only steps through 378. Candidate selection, threshold calibration and later development confirmation use separate chronological windows. The previously observed future test is excluded. See the [scientific audit and frozen protocol](docs/PHASE2_SCIENTIFIC_AUDIT.md) and [measured results and limitations](docs/PHASE2_RESULTS.md). Training dependencies are isolated in `requirements-training.txt`; the application remains dependency free. Any validated replacement requires approval before changing the dashboard model.
 
+### Phase 3 portable inference
+
+The locked Phase 2 tree now has a separate [validated JSON export and standard-library inference workflow](docs/PHASE3_PORTABLE_RUNBOOK.md). Local parity and timing evidence is in [Phase 3 results](docs/PHASE3_RESULTS.md). The [new-source validation plan](docs/PHASE3_VALIDATION_PLAN.md) specifies a fresh simulation realization; that dataset is not yet available. The historical future window remains a previously exposed holdout. No new fraud-accuracy or LinuxONE deployment claim is made, and the synthetic dashboard model remains the default.
+
 **Leakage warning:** [PaySim's dataset description](https://www.kaggle.com/ealaxi/paysim1) states that fraud is cancelled and cautions against using origin/destination balance columns as predictive inputs. The model feature map uses only `step`, `type` and `amount`; the offline pipeline reads `isFraud` separately as the target. Account identifiers, balance columns and `isFlaggedFraud` are never predictors. The demo API still accepts pre-transaction balances for display.
 
 ## System diagram

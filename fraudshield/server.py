@@ -1,23 +1,40 @@
 """Zero-runtime-dependency HTTP API and static web server (localhost by default)."""
 from __future__ import annotations
-import json, threading, time, traceback
+import json, os, threading, time, traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit,parse_qs
 from .features import clean_event
 from .model import RiskModel
+from .portable import PortableModel
 from .store import Store
 from .synthetic import generate
 
 ROOT=Path(__file__).resolve().parents[1]
 
+def research_model_from_env():
+    """Research scoring is off unless an explicitly fingerprinted artifact is supplied."""
+    path = os.environ.get('FRAUDSHIELD_RESEARCH_MODEL')
+    if path is None:
+        return None
+    if not path.strip():
+        raise ValueError('FRAUDSHIELD_RESEARCH_MODEL must be a model JSON path')
+    digest = os.environ.get('FRAUDSHIELD_RESEARCH_SHA256')
+    dataset_digest = os.environ.get('FRAUDSHIELD_RESEARCH_DATASET_SHA256')
+    if not digest or not dataset_digest:
+        raise ValueError('Research scoring requires both expected SHA-256 fingerprints')
+    return PortableModel(path, expected_sha256=digest,
+                         expected_dataset_sha256=dataset_digest)
+
+
 def reject_json_constant(value):
     raise ValueError(f'Invalid JSON constant: {value}')
 
 class App:
-    def __init__(self,root=ROOT,database=None):
+    def __init__(self,root=ROOT,database=None,research_model=None):
         self.root=Path(root)
         self.model=RiskModel(self.root/'models'/'baseline.json')
+        self.research_model=research_model
         self.store=Store(database or self.root/'data'/'fraudshield.sqlite3')
         self.worker=None
         self.worker_lock=threading.Lock()
@@ -52,6 +69,17 @@ class App:
             with self.worker_lock: self.replay['error']=str(exc)
         finally:
             with self.worker_lock: self.replay['running']=False
+
+    def research_status(self):
+        model=self.research_model
+        if model is None:
+            return {'available':False,'source':'PaySim synthetic simulation',
+                    'stored':False,'role':'separate research sandbox'}
+        return {'available':True,'source':'PaySim synthetic simulation',
+                'stored':False,'role':'separate research sandbox',
+                'evaluation':'development only; not independent validation',
+                'model_version':model.version,'artifact_sha256':model.sha256,
+                'operating_points':list(model.thresholds)}
 
     def state(self):
         with self.worker_lock: rep=dict(self.replay)
@@ -106,6 +134,7 @@ class App:
                     parsed=urlsplit(self.path);route=parsed.path
                     if route=='/api/health': return self.send_json({'ok':True,'name':'EIDOLON FRAUDSHIELD','mode':'demo','model':app.model.artifact['version']})
                     if route=='/api/state':return self.send_json(app.state())
+                    if route=='/api/research/status':return self.send_json(app.research_status())
                     if route=='/api/events':
                         query=parse_qs(parsed.query)
                         return self.send_json({'events':app.store.events(int(query.get('limit',['60'])[0]))})
@@ -125,6 +154,23 @@ class App:
                     parsed=urlsplit(self.path);route=parsed.path
                     if route=='/api/score':
                         result=app.score_event(self.read_json());return self.send_json(result,201)
+                    if route=='/api/research/score':
+                        if app.research_model is None:
+                            return self.err('Research model not configured',503)
+                        payload=self.read_json()
+                        required={'step','type','amount'}
+                        if not required.issubset(payload) or set(payload)-required-{'operating_point'}:
+                            raise ValueError('Only step, type, amount and optional operating_point are accepted')
+                        operating_point=payload.get('operating_point','max_f1')
+                        if not isinstance(operating_point,str):
+                            raise ValueError('Invalid research operating point')
+                        result=app.research_model.predict(
+                            {key:payload[key] for key in ('step','type','amount')},
+                            operating_point=operating_point)
+                        return self.send_json({
+                            **result,'stored':False,'model_role':'research_only',
+                            'source':'PaySim synthetic simulation',
+                            'evaluation':'development only; not independent validation'})
                     if route=='/api/demo/start':
                         payload=self.read_json()
                         return self.send_json(app.begin_replay(payload.get('count',85)),202)
@@ -148,7 +194,7 @@ class App:
 def serve(host='127.0.0.1',port=8000):
     if host not in ('127.0.0.1','localhost'):
         raise ValueError('Unauthenticated demo must bind to loopback only')
-    app=App()
+    app=App(research_model=research_model_from_env())
     http=ThreadingHTTPServer((host,port),app.handler())
     print(f'\n  EIDOLON // FRAUDSHIELD  →  http://{host}:{port}\n  Mode: synthetic demo • no live financial data\n  Ctrl+C to stop\n')
     try: http.serve_forever()

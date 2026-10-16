@@ -1,0 +1,24 @@
+{
+  "version": "paysim-phase2-v1",
+  "dataset_sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
+  "baseline_artifact_sha256": "2017a5382d3795724023b1f137ecbf96cd8b60311c30e0d64af2cf85318402dd",
+  "expected_development_rows": 5444003,
+  "split": {"fit_end": 250, "tune_end": 323, "calibration_end": 350, "confirmation_end": 378, "observed_test_start": 379},
+  "seed": 74,
+  "threads": 2,
+  "selection": "highest exact average precision on inner tuning; lexicographic candidate ID breaks ties",
+  "confirmation_policy": "Select candidates on steps 251..323, refit family winners on steps <=323, choose thresholds on steps 324..350, evaluate locked choices once on steps 351..378. Do not select again using confirmation results.",
+  "test_policy": "Hash whole CSV for identity, but stop feature/label loading after step 378. Do not score the previously observed test window in Phase 2.",
+  "review_rates_per_10000": [1, 5, 10, 25, 50],
+  "candidates": [
+    {"id": "logistic_base_c1", "family": "logistic", "features": "baseline", "C": 1.0, "class_weight": null},
+    {"id": "logistic_static_c01", "family": "logistic", "features": "static_v2", "C": 0.1, "class_weight": null},
+    {"id": "logistic_static_c1", "family": "logistic", "features": "static_v2", "C": 1.0, "class_weight": null},
+    {"id": "logistic_static_balanced", "family": "logistic", "features": "static_v2", "C": 1.0, "class_weight": "balanced"},
+    {"id": "hist_tree_leaf7", "family": "hist_tree", "features": "static_v2", "max_leaf_nodes": 7, "class_weight": null},
+    {"id": "hist_tree_leaf15", "family": "hist_tree", "features": "static_v2", "max_leaf_nodes": 15, "class_weight": null},
+    {"id": "hist_tree_leaf7_balanced", "family": "hist_tree", "features": "static_v2", "max_leaf_nodes": 7, "class_weight": "balanced"}
+  ],
+  "logistic_fixed": {"solver": "lbfgs", "max_iter": 1000, "tol": 0.000001},
+  "tree_fixed": {"max_iter": 100, "learning_rate": 0.1, "min_samples_leaf": 200, "l2_regularization": 10.0, "early_stopping": false}
+}

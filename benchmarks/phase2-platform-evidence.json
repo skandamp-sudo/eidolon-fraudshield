@@ -1,0 +1,55 @@
+{
+  "checked_on": "2026-10-15",
+  "scope": "PyPI release file inventory only; not a hardware execution test",
+  "packages": [
+    {
+      "name": "numpy",
+      "version": "2.3.4",
+      "source_url": "https://pypi.org/pypi/numpy/2.3.4/json",
+      "requires_python": ">=3.11",
+      "wheel_count": 73,
+      "s390x_wheels": [],
+      "portable_wheels": []
+    },
+    {
+      "name": "scipy",
+      "version": "1.16.2",
+      "source_url": "https://pypi.org/pypi/scipy/1.16.2/json",
+      "requires_python": ">=3.11",
+      "wheel_count": 60,
+      "s390x_wheels": [],
+      "portable_wheels": []
+    },
+    {
+      "name": "scikit-learn",
+      "version": "1.7.2",
+      "source_url": "https://pypi.org/pypi/scikit-learn/1.7.2/json",
+      "requires_python": ">=3.10",
+      "wheel_count": 30,
+      "s390x_wheels": [],
+      "portable_wheels": []
+    },
+    {
+      "name": "joblib",
+      "version": "1.5.2",
+      "source_url": "https://pypi.org/pypi/joblib/1.5.2/json",
+      "requires_python": ">=3.9",
+      "wheel_count": 1,
+      "s390x_wheels": [],
+      "portable_wheels": [
+        "joblib-1.5.2-py3-none-any.whl"
+      ]
+    },
+    {
+      "name": "threadpoolctl",
+      "version": "3.6.0",
+      "source_url": "https://pypi.org/pypi/threadpoolctl/3.6.0/json",
+      "requires_python": ">=3.9",
+      "wheel_count": 1,
+      "s390x_wheels": [],
+      "portable_wheels": [
+        "threadpoolctl-3.6.0-py3-none-any.whl"
+      ]
+    }
+  ]
+}

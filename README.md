@@ -61,7 +61,7 @@ To evaluate our *synthetic-trained* baseline on PaySim without saving data:
 python3 scripts/evaluate_paysim.py /path/to/paysim.csv --min-step 600
 ```
 
-**Interpretation warning:** This is an out-of-domain generalization check, not a holdout result from PaySim model training. The synthetic-trained baseline may perform poorly. The next scientific milestone is a *separate* PaySim-trained model and temporal test set.
+**Interpretation warning:** This script is an out-of-domain check of the synthetic-trained model. The separate PaySim baseline and Phase 2 development experiments described below have different training provenance.
 
 To train and evaluate a **separate** PaySim model after obtaining the canonical CSV:
 
@@ -69,7 +69,11 @@ To train and evaluate a **separate** PaySim model after obtaining the canonical 
 python3 scripts/train_paysim.py /path/to/paysim.csv
 ```
 
-The input must have the canonical PaySim columns and be sorted by nondecreasing `step`. The pipeline uses whole steps for training (first ~70% of rows), validation (next ~15%) and untouched future-step testing (remainder). It chooses the decision threshold on validation only, then evaluates test once. The local result is saved to ignored `models/paysim.local.json`; the dashboard still loads `models/baseline.json`. Training uses one streaming SGD pass and a 10,001-bin approximation for average precision to bound memory. The output records the CSV SHA-256, split boundaries, counts, natural class prevalence, confusion matrix and alert volume. The CSV is not bundled here, and **no PaySim training or test metrics have been produced for this repository**.
+The input must have the canonical PaySim columns and be sorted by nondecreasing `step`. The original pipeline uses whole steps for training, validation and a future test. It saves to ignored `models/paysim.local.json`; **do not rerun it over the preserved original artifact**. The dashboard still loads `models/baseline.json`. The completed local MacBook baseline on 6,362,620 rows is preserved in [the versioned benchmark report](benchmarks/paysim-baseline-v1.json), including dataset/artifact hashes and the previously observed future-test metrics. No dataset or local trained model is committed.
+
+### Phase 2 development comparisons
+
+The optional [Phase 2 runner](docs/PHASE2_REPRODUCIBILITY.md) compares batch logistic models and histogram trees using only steps through 378. Candidate selection, threshold calibration and later development confirmation use separate chronological windows. The previously observed future test is excluded. See the [scientific audit and frozen protocol](docs/PHASE2_SCIENTIFIC_AUDIT.md) and [measured results and limitations](docs/PHASE2_RESULTS.md). Training dependencies are isolated in `requirements-training.txt`; the application remains dependency free. Any validated replacement requires approval before changing the dashboard model.
 
 **Leakage warning:** [PaySim's dataset description](https://www.kaggle.com/ealaxi/paysim1) states that fraud is cancelled and cautions against using origin/destination balance columns as predictive inputs. The model feature map uses only `step`, `type` and `amount`; the offline pipeline reads `isFraud` separately as the target. Account identifiers, balance columns and `isFlaggedFraud` are never predictors. The demo API still accepts pre-transaction balances for display.
 
@@ -138,7 +142,7 @@ See [IBM Z deployment instructions](docs/IBM_Z_DEPLOYMENT.md), [scientific valid
 ## Roadmap
 
 1. **Built:** functional synthetic end-to-end demonstrator with recording and analyst review.
-2. **Prepared, not run on the full dataset:** temporal PaySim training and evaluation. Future work includes comparison models, uncertainty estimates and latency benchmarking.
+2. **Measured local baseline; Phase 2 development comparisons:** original PaySim results are preserved, with optional logistic/tree experiments and capacity thresholds. Independent future validation, uncertainty estimates and hardware benchmarking remain open.
 3. **Next:** deploy and verify on actual IBM LinuxONE `s390x`, capture host diagnostics and demo evidence.
 4. **Next:** final pitch, architecture, risk/limitations slides and recorded walkthrough.
 
